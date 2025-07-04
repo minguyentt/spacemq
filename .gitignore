@@ -1,2 +1,7 @@
-*dump.rdb
+dump.rdb
 .env
+/tmp/
+/redis_test_data/
+*.rdb
+*.aof
+*.log
