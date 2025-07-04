@@ -193,16 +193,6 @@ func NewTaskRunner(rdbq *DBQ) *taskRunner {
 	}
 }
 
-//TODO: encoding/decoding
-//NOTE: so the payload will be using json/encoding for marshaling/unmarshaling
-// I also want to encode and serialize the task meta data into byte slices.
-// So i can store the bytes in the hash set with one field. i.e "meta", data
-//
-// I have to consider inspecting/modifying/adding new fields to the meta data...
-// Right now, the Task struct will be the operated by the workers to do whatever modifications
-// ...
-// Im tired...
-
 func (r *taskRunner) Enqueue(ctx context.Context, task *Task) error {
 	enc, err := encodeTask(task)
 	if err != nil {
