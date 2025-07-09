@@ -61,8 +61,8 @@ type Runner interface {
 }
 
 type taskRunner struct {
-	*DBQ
-	Timer
+	db *DBQ
+	sign Timer
 }
 
 type DBQ struct {
@@ -74,19 +74,19 @@ func New(c redis.UniversalClient) *DBQ {
 }
 
 func (r *taskRunner) Close() error {
-	return r.client.Close()
+	return r.db.client.Close()
 }
 
 func (r *taskRunner) Ping() error {
-	return r.client.Ping(context.Background()).Err()
+	return r.db.client.Ping(context.Background()).Err()
 }
 
 func (r *taskRunner) Info() string {
-	return r.client.ClientInfo(context.Background()).String()
+	return r.db.client.ClientInfo(context.Background()).String()
 }
 
 func (r *taskRunner) GetClient() redis.UniversalClient {
-	return r.client
+	return r.db.client
 }
 
 type taskMeta struct {
@@ -206,11 +206,11 @@ func (r *taskRunner) Enqueue(ctx context.Context, task *Task) error {
 
 	argv := []any{
 		task.ID,
-		r.Now().Unix(),
+		r.sign.Now().Unix(),
 		enc,
 	}
 
-	err = enqueueCmd.Run(ctx, r.client, keys, argv...).Err()
+	err = enqueueCmd.Run(ctx, r.db.client, keys, argv...).Err()
 	if err != nil {
 		return fmt.Errorf("redis eval err: %v", err)
 	}
@@ -219,7 +219,7 @@ func (r *taskRunner) Enqueue(ctx context.Context, task *Task) error {
 }
 
 func (r *taskRunner) Dequeue(queueName string, infDur time.Duration) (*Task, error) {
-	inflightDuration := r.Now().Add(infDur)
+	inflightDuration := r.sign.Now().Add(infDur)
 
 	keys := []string{
 		PendingKey(queueName),
@@ -230,11 +230,11 @@ func (r *taskRunner) Dequeue(queueName string, infDur time.Duration) (*Task, err
 
 	argv := []any{
 		TaskKeyPrefix(queueName),
-		r.Now().Unix(),
+		r.sign.Now().Unix(),
 		inflightDuration,
 	}
 
-	res, err := dequeueCmd.Run(context.Background(), r.client, keys, argv...).Slice()
+	res, err := dequeueCmd.Run(context.Background(), r.db.client, keys, argv...).Slice()
 	if errors.Is(err, redis.Nil) {
 		return nil, nil
 	}
@@ -272,11 +272,11 @@ func (r *taskRunner) Acknowledge(ctx context.Context, job *spacemq.Job) error {
 
 	argv := []any{
 		job.TaskID(),
-		r.Now().Unix(),
+		r.sign.Now().Unix(),
 		job.GetTTL(),
 	}
 
-	err := ackQueueCmd.Run(ctx, r.client, keys, argv...).Err()
+	err := ackQueueCmd.Run(ctx, r.db.client, keys, argv...).Err()
 	if err != nil {
 		return err
 	}
@@ -294,7 +294,7 @@ func (r *taskRunner) Retry(
 
 	argv := []any{}
 
-	return retryQueueCmd.Run(ctx, r.client, keys, argv...).Err()
+	return retryQueueCmd.Run(ctx, r.db.client, keys, argv...).Err()
 }
 
 func (r *taskRunner) Requeue(ctx context.Context, job *spacemq.Job, batchLimit int) error {
@@ -305,11 +305,11 @@ func (r *taskRunner) Requeue(ctx context.Context, job *spacemq.Job, batchLimit i
 	}
 
 	argv := []any{
-		r.Now().Unix(),
+		r.sign.Now().Unix(),
 		int64(batchLimit),
 	}
 
-	return requeueCmd.Run(ctx, r.client, keys, argv...).Err()
+	return requeueCmd.Run(ctx, r.db.client, keys, argv...).Err()
 }
 
 func (r *taskRunner) MoveToDeadQueue(ctx context.Context, job *spacemq.Job) error {
