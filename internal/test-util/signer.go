@@ -5,23 +5,23 @@ import (
 	"time"
 )
 
-type signerTest struct {
+type signer struct {
 	t time.Time
 	mu sync.Mutex
 }
 
-func NewSignerTest(t time.Time) *signerTest {
-	return &signerTest{t:t}
+func NewSignerTest(t time.Time) *signer {
+	return &signer{t:t}
 }
 
-func (s *signerTest) Now() time.Time {
+func (s *signer) Now() time.Time {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	return s.t
 }
 
-func (s *signerTest) NowInUnix() int64 {
+func (s *signer) NowInUnix() int64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

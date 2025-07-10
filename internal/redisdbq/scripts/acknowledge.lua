@@ -3,7 +3,7 @@ local inflightKey = KEYS[2]
 local fullTaskKey = KEYS[3]
 
 local taskID = ARGV[1]
-local timeNowUnix = ARGV[2]
+local signedTime = ARGV[2] -- unix
 local taskTTLSecs = tonumber(ARGV[3])
 
 -- remove taskid from active queue
@@ -17,7 +17,7 @@ if redis.call("ZREM", inflightKey, taskID) == 0 then
 end
 
 -- set task meta data state to complete
-redis.call("HSET", fullTaskKey, "state", "completed", "completed_at", timeNowUnix)
+redis.call("HSET", fullTaskKey, "state", "completed", "completed_at", signedTime)
 
 if tonumber(taskTTLSecs) and tonumber(taskTTLSecs) > 0 then
     redis.call("EXPIRE", fullTaskKey, tonumber(taskTTLSecs))

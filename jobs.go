@@ -36,10 +36,18 @@ func (s JobState) String() string {
 }
 
 const (
-	DefaultMaxAttempts      = 25
-	DefaultTTL              = 24 * time.Hour * 3 // time to live
-	DefaultInFlightDuration = 30 * time.Second   // computing inflight operations
-	DefaultTimeout          = 30 * time.Second   // used to compute enqueue operations
+	DefaultMaxAttempts     = 25
+
+	// time to live
+	DefaultTTL             = 24 * time.Hour * 3
+
+	// duration for workers to pick up tasks from inflight queue
+	DefaultInFlightTimeout = 30 * time.Second
+
+	// for workers operating runtime tasks
+	DefaultTimeout         = 30 * time.Second
+
+	//TODO: allow settings deadline for task to be completed
 )
 
 type Job struct {
@@ -65,7 +73,7 @@ func NewJob(payload []byte, opts ...JobOpts) (*Job, error) {
 		id:               ulid.MustNew(ulid.Now(), rand.Reader).String(),
 		payload:          payload,
 		maxAttempts:      DefaultMaxAttempts,
-		inflightDuration: DefaultInFlightDuration,
+		inflightDuration: DefaultInFlightTimeout,
 		timeout:          DefaultTimeout,
 		ttl:              DefaultTTL,
 	}

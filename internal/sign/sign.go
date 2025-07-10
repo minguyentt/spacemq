@@ -1,14 +1,14 @@
-package signer
+package sign
 
 import "time"
 
-type Signer interface {
+type Timer interface {
 	Now() time.Time
 	NowInUnix() int64
 }
 
 type signer struct{}
-func NewSigner() Signer {
+func NewSigner() Timer {
 	return &signer{}
 }
 

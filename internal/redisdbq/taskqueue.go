@@ -9,6 +9,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	spacemq "github.com/minguyentt/spaceMQ"
+	"github.com/minguyentt/spaceMQ/internal/sign"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -40,17 +41,17 @@ var (
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-type (
-	Timer   interface{ Now() time.Time }
-	rdbTime struct{}
-)
-
-func NewTimer() *rdbTime          { return &rdbTime{} }
-func (r *rdbTime) Now() time.Time { return time.Now() }
+// type (
+// 	Timer   interface{ Now() time.Time }
+// 	rdbTime struct{}
+// )
+//
+// func NewTimer() *rdbTime          { return &rdbTime{} }
+// func (r *rdbTime) Now() time.Time { return time.Now() }
 
 type Runner interface {
 	Enqueue(ctx context.Context) error
-	Dequeue(queueName string, infDur time.Duration) (*Task, error)
+	Dequeue(queueName string, inflightDeadline time.Duration) (*Task, error)
 	Acknowledge(ctx context.Context)
 	Retry()
 	MoveToDeadQueue()
@@ -58,11 +59,6 @@ type Runner interface {
 	Ping() error
 	Close() error
 	ClientInfo() string
-}
-
-type taskRunner struct {
-	db *DBQ
-	sign Timer
 }
 
 type DBQ struct {
@@ -186,11 +182,20 @@ func decode(data []byte) (*Task, error) {
 	return t, nil
 }
 
+type taskRunner struct {
+	db   *DBQ
+	sign sign.Timer
+}
+
 func NewTaskRunner(rdbq *DBQ) *taskRunner {
 	return &taskRunner{
 		rdbq,
-		NewTimer(),
+		sign.NewSigner(),
 	}
+}
+
+func (r *taskRunner) SetSignerType(s sign.Timer) {
+	r.sign = s
 }
 
 func (r *taskRunner) Enqueue(ctx context.Context, task *Task) error {
@@ -218,8 +223,8 @@ func (r *taskRunner) Enqueue(ctx context.Context, task *Task) error {
 	return nil
 }
 
-func (r *taskRunner) Dequeue(queueName string, infDur time.Duration) (*Task, error) {
-	inflightDuration := r.sign.Now().Add(infDur)
+func (r *taskRunner) Dequeue(queueName string, inflightDeadline time.Duration) (*Task, error) {
+	inflightDuration := r.sign.Now().Add(inflightDeadline)
 
 	keys := []string{
 		PendingKey(queueName),

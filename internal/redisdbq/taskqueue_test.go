@@ -195,10 +195,18 @@ func TestDequeueScript(t *testing.T) {
 	id := generateID()
 
 	tq := setupTaskRunner(client)
+
 	flush(t, tq.db.client)
 	fmt.Println("(TestEnqueueScript) FLUSHING REDIS DATABASE...")
 
-
+	task1, task2, task3 :=
+	&Task{
+		ID: id,
+		QueueName: "test_dequeue1",
+		Payload: nil,
+	},
+	&Task{},
+	&Task{}
 }
 
 // TODO: implement tests for...
