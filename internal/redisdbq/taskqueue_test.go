@@ -72,7 +72,7 @@ func mockEncoderData(id string, data map[string]any) []struct {
 	}
 }
 
-func newSimclient() *redis.Client {
+func newSimClient() *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr: "localhost:7777",
 		DB:   7,
@@ -124,7 +124,7 @@ func TestTaskEncoder(t *testing.T) {
 }
 
 func TestEnqueueScript(t *testing.T) {
-	client := client()
+	client := newSimClient()
 	id := generateID()
 
 	tq := setupTaskRunner(client)
@@ -191,16 +191,18 @@ func TestEnqueueScript(t *testing.T) {
 }
 
 func TestDequeueScript(t *testing.T) {
-	client := client()
+	client := newSimClient()
 	id := generateID()
 
 	tq := setupTaskRunner(client)
 	flush(t, tq.db.client)
 	fmt.Println("(TestEnqueueScript) FLUSHING REDIS DATABASE...")
+
+
 }
+
 // TODO: implement tests for...
 // acknowledge
 // deadqueue
-// dequeue
 // requeue
 // retryqueue
