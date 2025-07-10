@@ -31,5 +31,5 @@ redis.call("HDEL", fullTaskKey, "pending_since")
 redis.call("ZADD", inflightKey, flightDuration)
 
 return {
-	redis.call("HMGET", fullTaskKey, "msg", "state", "started_at"),
+	redis.call("HMGET", fullTaskKey, "meta", "state", "started_at"),
 }

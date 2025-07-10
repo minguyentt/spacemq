@@ -11,7 +11,10 @@ if redis.call("EXISTS", fullTaskKey) == 1 then
 	return 0
 end
 
-redis.call("HSET", fullTaskKey, "meta", metadata, "state", "pending", "pending_since", timeNow)
+redis.call("HSET", fullTaskKey,
+    "meta", metadata,
+    "state", "pending",
+    "pending_since", timeNow)
 
 -- push the taskid to the queue pending list
 redis.call("LPUSH", queuePendingKey, taskid)

@@ -13,3 +13,4 @@ func NewTaskQueue(client redis.UniversalClient, job *Job) *TaskQueue {
 		job: job,
 	}
 }
+

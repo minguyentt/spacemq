@@ -18,7 +18,7 @@ var defaultTTL = 10 * time.Minute
 
 type payloadTest map[string]any
 
-func genTestID() string {
+func generateID() string {
 	return ulid.MustNew(ulid.Now(), rand.Reader).String()
 }
 
@@ -72,7 +72,7 @@ func mockEncoderData(id string, data map[string]any) []struct {
 	}
 }
 
-func client() *redis.Client {
+func newSimclient() *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr: "localhost:7777",
 		DB:   7,
@@ -93,7 +93,7 @@ func flush(tb testing.TB, c redis.UniversalClient) {
 }
 
 func TestTaskEncoder(t *testing.T) {
-	id := genTestID()
+	id := generateID()
 
 	pl := payloadTest{
 		"user_id":     2,
@@ -125,7 +125,7 @@ func TestTaskEncoder(t *testing.T) {
 
 func TestEnqueueScript(t *testing.T) {
 	client := client()
-	id := genTestID()
+	id := generateID()
 
 	tq := setupTaskRunner(client)
 	flush(t, tq.db.client)
@@ -189,3 +189,18 @@ func TestEnqueueScript(t *testing.T) {
 	stateVal := tq.db.client.HGet(context.Background(), taskKey, "state").Val()
 	assert.Equal(t, "pending", stateVal, "(REDIS LIST) should set state to pending")
 }
+
+func TestDequeueScript(t *testing.T) {
+	client := client()
+	id := generateID()
+
+	tq := setupTaskRunner(client)
+	flush(t, tq.db.client)
+	fmt.Println("(TestEnqueueScript) FLUSHING REDIS DATABASE...")
+}
+// TODO: implement tests for...
+// acknowledge
+// deadqueue
+// dequeue
+// requeue
+// retryqueue
